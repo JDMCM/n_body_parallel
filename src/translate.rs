@@ -1,7 +1,10 @@
+
 const PI: f64 = 3.141592653589793;
 const SOLAR_MASS: f64 = 4.0 * PI * PI;
 const YEAR: f64 = 365.24;
 const N_BODIES: usize = 5;
+
+
 
 #[derive(Clone, Copy)]
 struct Nbody{
