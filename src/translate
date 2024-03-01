@@ -26,6 +26,29 @@ impl nbody {
     }
 }
 
+pub fn circular_orbits(n: usize) -> Vec<nbody> {
+    let mut particle_buf = vec![];
+      particle_buf.push(nbody {
+        x: 0,y: 0,z: 0,vx: 0,vy: 0,vz: 0,m: 1.0*SOLAR_MASS,
+      });
+  
+      for i in 0..n {
+          let d = 0.1 + ((i as f64) * 5.0 / (n as f64));
+          let v = f64::sqrt(1.0 / d);
+          let theta = fastrand::f64() * 6.28;
+          let x1 = d * f64::cos(theta);
+          let y1 = d * f64::sin(theta);
+          let vx1 = -v * f64::sin(theta);
+          let vy1 = v * f64::cos(theta);
+          particle_buf.push(Particle {
+              x: x1,y: y1,z: 0,vx: vx1,vy: vy1,vz: 0,
+              m: 1e-14*SOLAR_MASS,
+             
+          });
+      }
+      particle_buf
+  }
+
 
 struct nbodies {
     bodies:Vec<nbody>
@@ -58,6 +81,24 @@ fn step(&mut bodies: Vec<nbody>, dt: f64){
             }
         }
     }
+}
+
+fn energy(bodies: Vec<nbody>) -> f64 {
+    let mut e = 0.0;
+    for i in 0..bodies.length() {
+        if i +1 < bodies.length() {
+            e += 0.5*bodies[i].mass*();
+            for j in i+1..bodies.length(bodies[i].vx*bodies[i].vx+bodies[i].vy*bodies[i].vy+bodies[i].vz*bodies[i].vz){
+                // get the distance between the objects
+                let dx: f64 = bodies[i].x - bodies[j].x;
+                let dy: f64 = bodies[i].y - bodies[j].y;
+                let dz: f64 = bodies[i].z - bodies[j].z;
+                let d: f64 = (dx*dx + dy*dy + dz*dz).sqrt();
+                e -= bodies[i].mass*bodies[j].mass / d;
+            }
+        }
+
+}
     //update the postion of each particle
     for k in bodies.iter_mut() {
         k.x += k.vx;
