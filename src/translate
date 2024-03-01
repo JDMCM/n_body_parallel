@@ -1,0 +1,67 @@
+const PI: f64 = 3.141592653589793;
+const SOLAR_MASS: f64 = 4.0 * PI * PI;
+const YEAR: f64 = 365.24;
+const N_BODIES: usize = 5;
+
+#[derive(Clone, Copy)]
+struct nbody{
+    x:f64,
+    y:f64,
+    z:f64,
+    vx:f64,
+    vy:f64,
+    vz:f64,
+    mass:f64,
+}
+
+impl nbody {
+    fn new(x1:f64 ,y1:f64 ,z1:f64 ,vx1:f64 ,vy1:f64 ,vz1:f64 ,mass1:F64)->Self{
+        x =x1;
+        y =y1;
+        z =z1;
+        vx =vx1;
+        vy =vy1;
+        vz =vz1;
+        mass = mass1;
+    }
+}
+
+
+struct nbodies {
+    bodies:Vec<nbody>
+}
+impl nbodies{
+    fn new(bodies1:Vec<nbody>)->Self{
+        bodies = bodies1
+    }
+}
+
+fn step(&mut bodies: Vec<nbody>, dt: f64){
+    for i in 0..bodies.length() {
+        if i +1 < bodies.length() {
+            for j in i+1..bodies.length(){
+                // get the distance between the objects
+                let dx: f64 = bodies[i].x - bodies[j].x;
+                let dy: f64 = bodies[i].y - bodies[j].y;
+                let dz: f64 = bodies[i].z - bodies[j].z;
+                let d2: f64 = dx*dx + dy*dy + dz*dz;
+                //get the magnitude of the force over a period of time 
+                let magi:f64 = (dt*bodies[i].mass)/(d2*d2.sqrt());
+                let magj:f64 = (dt*bodies[j].mass)/(d2*d2.sqrt());
+                //update the velocities of the objects and proj mag onto eac distance comp
+                bodies[i].vx += dx*magj;
+                bodies[i].vy += dy*magj;
+                bodies[i].vz += dz*magj;
+                bodies[j].vx -= dz*magi;
+                bodies[j].vy -= dz*magi;
+                bodies[j].vz -= dz*magi;
+            }
+        }
+    }
+    //update the postion of each particle
+    for k in bodies.iter_mut() {
+        k.x += k.vx;
+        k.y += k.vy;
+        k.z += k.vz;
+    }
+}
