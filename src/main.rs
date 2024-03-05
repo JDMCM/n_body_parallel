@@ -1,132 +1,200 @@
 
-
 const PI: f64 = 3.141592653589793;
 const SOLAR_MASS: f64 = 4.0 * PI * PI;
 const YEAR: f64 = 365.24;
 const N_BODIES: usize = 5;
 
-static BODIES: [Planet;N_BODIES] = [
-    // Sun
-    Planet {
-        x: 0.0, y: 0.0, z: 0.0,
-        vx: 0.0, vy: 0.0, vz: 0.0,
-        mass: SOLAR_MASS,
-    },
-    // Jupiter
-    Planet {
-        x: 4.84143144246472090e+00,
-        y: -1.16032004402742839e+00,
-        z: -1.03622044471123109e-01,
-        vx: 1.66007664274403694e-03 * YEAR,
-        vy: 7.69901118419740425e-03 * YEAR,
-        vz: -6.90460016972063023e-05 * YEAR,
-        mass: 9.54791938424326609e-04 * SOLAR_MASS,
-    },
-    // Saturn
-    Planet {
-        x: 8.34336671824457987e+00,
-        y: 4.12479856412430479e+00,
-        z: -4.03523417114321381e-01,
-        vx: -2.76742510726862411e-03 * YEAR,
-        vy: 4.99852801234917238e-03 * YEAR,
-        vz: 2.30417297573763929e-05 * YEAR,
-        mass: 2.85885980666130812e-04 * SOLAR_MASS,
-    },
-    // Uranus
-    Planet {
-        x: 1.28943695621391310e+01,
-        y: -1.51111514016986312e+01,
-        z: -2.23307578892655734e-01,
-        vx: 2.96460137564761618e-03 * YEAR,
-        vy: 2.37847173959480950e-03 * YEAR,
-        vz: -2.96589568540237556e-05 * YEAR,
-        mass: 4.36624404335156298e-05 * SOLAR_MASS,
-    },
-    // Neptune
-    Planet {
-        x: 1.53796971148509165e+01,
-        y: -2.59193146099879641e+01,
-        z: 1.79258772950371181e-01,
-        vx: 2.68067772490389322e-03 * YEAR,
-        vy: 1.62824170038242295e-03 * YEAR,
-        vz: -9.51592254519715870e-05 * YEAR,
-        mass: 5.15138902046611451e-05 * SOLAR_MASS,
-    },
-];
 
-#[derive(Clone, Copy)]
-struct Planet {
-    x: f64, y: f64, z: f64,
-    vx: f64, vy: f64, vz: f64,
-    mass: f64,
+
+#[derive(Clone, Copy, Debug)]
+struct Nbody{
+    x:f64,
+    y:f64,
+    z:f64,
+    vx:f64,
+    vy:f64,
+    vz:f64,
+    mass:f64,
 }
 
-fn advance(bodies: &mut [Planet;N_BODIES], dt: f64, steps: i32) {
-    for _ in (0..steps) {
-        let mut b_slice: &mut [_] = bodies;
-        loop {
-            let bi = match shift_mut_ref(&mut b_slice) {
-                Some(bi) => bi,
-                None => break
-            };
-            for bj in b_slice.iter_mut() {
-                let dx = bi.x - bj.x;
-                let dy = bi.y - bj.y;
-                let dz = bi.z - bj.z;
 
-                let d2 = dx * dx + dy * dy + dz * dz;
-                let mag = dt / (d2 * d2.sqrt());
 
-                let massj_mag = bj.mass * mag;
-                bi.vx -= dx * massj_mag;
-                bi.vy -= dy * massj_mag;
-                bi.vz -= dz * massj_mag;
+pub fn circular_orbits(n: usize) -> Vec<Nbody> {
+    let mut particle_buf = vec![];
+      particle_buf.push(Nbody {
+        x: 0.0,y: 0.0,z: 0.0,vx: 0.0,vy: 0.0,vz: 0.0,mass: 1.0*SOLAR_MASS,
+      });
+  
+      for i in 0..n {
+          let d = 0.1 + ((i as f64) * 5.0 / (n as f64));
+          let v = f64::sqrt(1.0 / d);
+          let theta = fastrand::f64() * 6.28;
+          let x1 = d * f64::cos(theta);
+          let y1 = d * f64::sin(theta);
+          let vx1 = -v * f64::sin(theta);
+          let vy1 = v * f64::cos(theta);
+          particle_buf.push(Nbody {
+              x: x1,y: y1,z: 0.0,vx: vx1,vy: vy1,vz: 0.0,
+              mass: 1e-14*SOLAR_MASS,
+             
+          });
+      }
+      particle_buf
+}
 
-                let massi_mag = bi.mass * mag;
-                bj.vx += dx * massi_mag;
-                bj.vy += dy * massi_mag;
-                bj.vz += dz * massi_mag;
+fn create_testbodies() ->Vec<Nbody> {
+let mut testbodies:Vec<Nbody> = vec![];
+
+testbodies.push(Nbody {
+    x: 0.0, y: 0.0, z: 0.0,
+    vx: 0.0, vy: 0.0, vz: 0.0,
+    mass: SOLAR_MASS,
+});
+// Jupiter
+testbodies.push(Nbody {
+    x: 4.84143144246472090e+00,
+    y: -1.16032004402742839e+00,
+    z: -1.03622044471123109e-01,
+    vx: 1.66007664274403694e-03 * YEAR,
+    vy: 7.69901118419740425e-03 * YEAR,
+    vz: -6.90460016972063023e-05 * YEAR,
+    mass: 9.54791938424326609e-04 * SOLAR_MASS,
+});
+// Saturn
+testbodies.push(Nbody {
+    x: 8.34336671824457987e+00,
+    y: 4.12479856412430479e+00,
+    z: -4.03523417114321381e-01,
+    vx: -2.76742510726862411e-03 * YEAR,
+    vy: 4.99852801234917238e-03 * YEAR,
+    vz: 2.30417297573763929e-05 * YEAR,
+    mass: 2.85885980666130812e-04 * SOLAR_MASS,
+});
+// Uranus
+testbodies.push(Nbody {
+    x: 1.28943695621391310e+01,
+    y: -1.51111514016986312e+01,
+    z: -2.23307578892655734e-01,
+    vx: 2.96460137564761618e-03 * YEAR,
+    vy: 2.37847173959480950e-03 * YEAR,
+    vz: -2.96589568540237556e-05 * YEAR,
+    mass: 4.36624404335156298e-05 * SOLAR_MASS,
+});
+// Neptune
+testbodies.push(Nbody {
+    x: 1.53796971148509165e+01,
+    y: -2.59193146099879641e+01,
+    z: 1.79258772950371181e-01,
+    vx: 2.68067772490389322e-03 * YEAR,
+    vy: 1.62824170038242295e-03 * YEAR,
+    vz: -9.51592254519715870e-05 * YEAR,
+    mass: 5.15138902046611451e-05 * SOLAR_MASS,
+});
+
+return testbodies
+}
+
+
+fn step(bodies: &mut Vec<Nbody>, dt: f64){
+    for i in 0..bodies.len() {
+        if i +1 < bodies.len() {
+            for j in i+1..bodies.len(){
+                // get the distance between the objects
+                let dx: f64 = bodies[i].x - bodies[j].x;
+                let dy: f64 = bodies[i].y - bodies[j].y;
+                let dz: f64 = bodies[i].z - bodies[j].z;
+                let d2: f64 = dx*dx + dy*dy + dz*dz;
+                //get the magnitude of the force over a period of time 
+                let magi:f64 = (dt*bodies[i].mass)/(d2*d2.sqrt());
+                let magj:f64 = (dt*bodies[j].mass)/(d2*d2.sqrt());
+                //update the velocities of the objects and proj mag onto eac distance comp
+                bodies[i].vx -= dx*magj;
+                bodies[i].vy -= dy*magj;
+                bodies[i].vz -= dz*magj;
+                bodies[j].vx += dx*magi;
+                bodies[j].vy += dy*magi;
+                bodies[j].vz += dz*magi;
             }
-            bi.x += dt * bi.vx;
-            bi.y += dt * bi.vy;
-            bi.z += dt * bi.vz;
         }
+
+
+    }
+    for i in 0..bodies.len() {
+        bodies[i].x += bodies[i].vx*dt;
+        bodies[i].y += bodies[i].vy*dt;
+        bodies[i].z += bodies[i].vz*dt;
     }
 }
 
-fn energy(bodies: &[Planet;N_BODIES]) -> f64 {
+fn better_step(bd: &mut Vec<Nbody>, dt: f64) {
+    let mut mtopx:f64 = 0.0;
+    let mut mtopy:f64 = 0.0;
+    let mut mtopz:f64 = 0.0;
+    let mut mbot:f64  = 0.0;
+    //get the center mass of the total system
+    for i in bd.iter() {
+        mtopx += i.x*i.mass;
+        mtopy += i.y*i.mass;
+        mtopz += i.z*i.mass;
+        mbot  += i.mass;
+    }
+    //get the center of mass of the entire system except
+    //the part we are finding the accelleration on
+    for i in bd.iter_mut() {
+       let m_sys = mbot -i.mass;
+       let r_x = i.x-((mtopx - i.x*i.mass)/m_sys);
+       let r_y = i.y-((mtopy - i.y*i.mass)/m_sys);
+       let r_z = i.z-((mtopz - i.z*i.mass)/m_sys);
+       let r2 = r_x*r_x+r_y*r_y+r_z*r_z;
+       let mag_a = (dt*m_sys)/(r2*r2.sqrt());
+       i.vx -= r_x*mag_a;
+       i.vx -= r_y*mag_a;
+       i.vx -= r_z*mag_a;
+       i.x += i.vx*dt;
+       i.y += i.vy*dt;
+       i.z += i.vz*dt;
+
+    }
+}
+
+fn advance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32) {
+    for _ in 0..steps {
+        better_step(bodies,dt)
+    }
+}
+
+fn energy(bodies: &Vec<Nbody>) -> f64 {
     let mut e = 0.0;
-    let mut bodies = bodies.iter();
-    loop {
-        let bi = match bodies.next() {
-            Some(bi) => bi,
-            None => break
-        };
-        e += (bi.vx * bi.vx + bi.vy * bi.vy + bi.vz * bi.vz) * bi.mass / 2.0;
-        for bj in bodies.clone() {
-            let dx = bi.x - bj.x;
-            let dy = bi.y - bj.y;
-            let dz = bi.z - bj.z;
-            let dist = (dx * dx + dy * dy + dz * dz).sqrt();
-            e -= bi.mass * bj.mass / dist;
+    for i in 0..bodies.len() {
+        if i +1 < bodies.len() {
+            e += 0.5*bodies[i].mass*(bodies[i].vx*bodies[i].vx+bodies[i].vy*bodies[i].vy+bodies[i].vz*bodies[i].vz);
+            for j in i+1..bodies.len(){
+                // get the distance between the objects
+                let dx: f64 = bodies[i].x - bodies[j].x;
+                let dy: f64 = bodies[i].y - bodies[j].y;
+                let dz: f64 = bodies[i].z - bodies[j].z;
+                let d: f64 = (dx*dx + dy*dy + dz*dz).sqrt();
+                //println!("{} {} {} {}",i,j,d,e);
+                e -= bodies[i].mass*bodies[j].mass / d;
+            }
         }
+
     }
-    e
+    return e;    
 }
 
-fn offset_momentum(bodies: &mut [Planet;N_BODIES]) {
-    let mut px = 0.0;
-    let mut py = 0.0;
-    let mut pz = 0.0;
-    for bi in bodies.iter() {
-        px += bi.vx * bi.mass;
-        py += bi.vy * bi.mass;
-        pz += bi.vz * bi.mass;
+fn offset_momentum(bodies: &mut Vec<Nbody>){
+    let mut px: f64 = 0.0;
+    let mut py: f64 = 0.0;
+    let mut pz: f64 = 0.0;
+    for i in 1..bodies.len() {
+        px += bodies[i].mass*bodies[i].vx;
+        py += bodies[i].mass*bodies[i].vy;
+        pz += bodies[i].mass*bodies[i].vz;
     }
-    let sun = &mut bodies[0];
-    sun.vx = - px / SOLAR_MASS;
-    sun.vy = - py / SOLAR_MASS;
-    sun.vz = - pz / SOLAR_MASS;
+    bodies[0].vx = -px/bodies[0].mass;
+    bodies[0].vy = -py/bodies[0].mass;
+    bodies[0].vz = -pz/bodies[0].mass;
 }
 
 fn main() {
@@ -134,22 +202,15 @@ fn main() {
         .and_then(|s| s.into_string().ok())
         .and_then(|n| n.parse().ok())
         .unwrap_or(1000);
-    let mut bodies = BODIES;
+    let mut bodies = create_testbodies(); //circular_orbits(10);
+    //println!("{:?}", bodies);
+
 
     offset_momentum(&mut bodies);
-    println!("{:.9}", energy(&bodies));
+    println!("{}", energy(&bodies));
 
-    advance(&mut bodies, 0.01, n);
 
-    println!("{:.9}", energy(&bodies));
-}
+    advance(&mut bodies, 0.01,n);
 
-/// Pop a mutable reference off the head of a slice, mutating the slice to no
-/// longer contain the mutable reference.
-fn shift_mut_ref<'a, T>(r: &mut &'a mut [T]) -> Option<&'a mut T> {
-    if r.len() == 0 { return None }
-    let tmp = std::mem::replace(r, &mut []);
-    let (h, t) = tmp.split_at_mut(1);
-    *r = t;
-    Some(&mut h[0])
+    println!("{}", energy(&bodies));
 }
