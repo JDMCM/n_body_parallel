@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 
 const PI: f64 = 3.141592653589793;
 const SOLAR_MASS: f64 = 4.0 * PI * PI;
@@ -126,7 +127,55 @@ fn step(bodies: &mut Vec<Nbody>, dt: f64){
     }
 }
 
-fn better_step(bd: &mut Vec<Nbody>, dt: f64) {
+fn advance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32) {
+    for _ in 0..steps {
+        step(bodies,dt)
+    }
+}
+
+fn make_accels(bodies: & Vec<Nbody>,dt: f64)->Vec<(f64,f64,f64)>{
+    let accels = bodies.into_par_iter().map(|i| {
+        let mut accel: (f64,f64,f64) = (0.0,0.0,0.0);
+        for j in  bodies {
+            let dx: f64 = i.x - j.x;
+            let dy: f64 = i.y - j.y;
+            let dz: f64 = i.z - j.z;
+            let d2: f64 = dx*dx + dy*dy + dz*dz;
+            if d2 != 0.0 {
+                let magi:f64 = (dt*j.mass)/(d2*d2.sqrt());
+                accel.0 += dx*magi;
+                accel.1 += dy*magi;
+                accel.2 += dz*magi;
+
+            }
+        }
+        return accel;
+    });
+    let accelsdt: Vec<(f64,f64,f64)> = accels.collect();
+    return accelsdt
+}
+
+fn pstep(bodies: &mut Vec<Nbody>,dt: f64) {
+    let accel = make_accels(bodies, dt);
+    for i in 0..bodies.len() {
+        bodies[i].vx += accel[i].0;
+        bodies[i].vy += accel[i].1;
+        bodies[i].vz += accel[i].2;
+    }
+
+}
+
+fn padvance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32){
+    for _ in 0..steps {
+        pstep(bodies,dt)
+    }
+}
+
+
+    
+
+
+fn worse_step(bd: &mut Vec<Nbody>, dt: f64) {
     let mut mtopx:f64 = 0.0;
     let mut mtopy:f64 = 0.0;
     let mut mtopz:f64 = 0.0;
@@ -154,12 +203,6 @@ fn better_step(bd: &mut Vec<Nbody>, dt: f64) {
        i.y += i.vy*dt;
        i.z += i.vz*dt;
 
-    }
-}
-
-fn advance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32) {
-    for _ in 0..steps {
-        better_step(bodies,dt)
     }
 }
 
@@ -210,7 +253,7 @@ fn main() {
     println!("{}", energy(&bodies));
 
 
-    advance(&mut bodies, 0.01,n);
+    padvance(&mut bodies, 0.01,n);
 
     println!("{}", energy(&bodies));
 }
