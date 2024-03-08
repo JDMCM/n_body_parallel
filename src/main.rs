@@ -143,9 +143,9 @@ fn make_accels(bodies: & Vec<Nbody>,dt: f64)->Vec<(f64,f64,f64)>{
             let d2: f64 = dx*dx + dy*dy + dz*dz;
             if d2 != 0.0 {
                 let magi:f64 = (dt*j.mass)/(d2*d2.sqrt());
-                accel.0 += dx*magi;
-                accel.1 += dy*magi;
-                accel.2 += dz*magi;
+                accel.0 -= dx*magi;
+                accel.1 -= dy*magi;
+                accel.2 -= dz*magi;
 
             }
         }
@@ -161,13 +161,17 @@ fn pstep(bodies: &mut Vec<Nbody>,dt: f64) {
         bodies[i].vx += accel[i].0;
         bodies[i].vy += accel[i].1;
         bodies[i].vz += accel[i].2;
+        bodies[i].x +=  bodies[i].vx*dt;
+        bodies[i].y +=  bodies[i].vy*dt;
+        bodies[i].z +=  bodies[i].vz*dt;
     }
 
 }
 
 fn padvance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32){
     for _ in 0..steps {
-        pstep(bodies,dt)
+        pstep(bodies,dt);
+        //println!("{:?},{:?},{:?}", bodies[1].x ,bodies[1].y, bodies[1].z);
     }
 }
 
@@ -204,6 +208,34 @@ fn worse_step(bd: &mut Vec<Nbody>, dt: f64) {
        i.z += i.vz*dt;
 
     }
+}
+
+fn make_potentials(bodies: & Vec<Nbody>)->f64{
+    let e_s = (0..bodies.len()).into_par_iter().map(|i| {
+        let mut e: f64 = 0.0;
+        for j in  i+1..bodies.len() {
+             // get the distance between the objects
+             let dx: f64 = bodies[i].x - bodies[j].x;
+             let dy: f64 = bodies[i].y - bodies[j].y;
+             let dz: f64 = bodies[i].z - bodies[j].z;
+             let d: f64 = (dx*dx + dy*dy + dz*dz).sqrt();
+             //println!("{} {} {} {}",i,j,d,e);
+             e -= bodies[i].mass*bodies[j].mass / d;
+        }
+        
+        return e;
+    });
+    let potvect: Vec<f64> = e_s.collect();
+    let pot:f64 = potvect.iter().sum();
+    return pot;
+}
+
+fn p_energy(bodies: &Vec<Nbody>) -> f64 {
+    let mut e = make_potentials(bodies);
+    for i in 0..bodies.len() {
+        e += 0.5*bodies[i].mass*(bodies[i].vx*bodies[i].vx+bodies[i].vy*bodies[i].vy+bodies[i].vz*bodies[i].vz);
+    }
+    return e;
 }
 
 fn energy(bodies: &Vec<Nbody>) -> f64 {
@@ -250,10 +282,10 @@ fn main() {
 
 
     offset_momentum(&mut bodies);
-    println!("{}", energy(&bodies));
+    println!("{}", p_energy(&bodies));
 
 
     padvance(&mut bodies, 0.01,n);
 
-    println!("{}", energy(&bodies));
+    println!("{}", p_energy(&bodies));
 }
