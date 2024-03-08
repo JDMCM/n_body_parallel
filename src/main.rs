@@ -210,9 +210,9 @@ fn worse_step(bd: &mut Vec<Nbody>, dt: f64) {
     }
 }
 
-fn make_potentials(bodies: & Vec<Nbody>)->f64{
+fn p_energy(bodies: & Vec<Nbody>)->f64{
     let e_s = (0..bodies.len()).into_par_iter().map(|i| {
-        let mut e: f64 = 0.0;
+        let mut e: f64 = 0.5*bodies[i].mass*(bodies[i].vx*bodies[i].vx+bodies[i].vy*bodies[i].vy+bodies[i].vz*bodies[i].vz);
         for j in  i+1..bodies.len() {
              // get the distance between the objects
              let dx: f64 = bodies[i].x - bodies[j].x;
@@ -225,17 +225,9 @@ fn make_potentials(bodies: & Vec<Nbody>)->f64{
         
         return e;
     });
-    let potvect: Vec<f64> = e_s.collect();
-    let pot:f64 = potvect.iter().sum();
+    let pot: f64 = e_s.sum();
+    
     return pot;
-}
-
-fn p_energy(bodies: &Vec<Nbody>) -> f64 {
-    let mut e = make_potentials(bodies);
-    for i in 0..bodies.len() {
-        e += 0.5*bodies[i].mass*(bodies[i].vx*bodies[i].vx+bodies[i].vy*bodies[i].vy+bodies[i].vz*bodies[i].vz);
-    }
-    return e;
 }
 
 fn energy(bodies: &Vec<Nbody>) -> f64 {
