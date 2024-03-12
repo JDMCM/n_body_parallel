@@ -16,6 +16,7 @@ struct Nbody{
     vy:f64,
     vz:f64,
     mass:f64,
+    
 }
 
 
@@ -23,10 +24,10 @@ struct Nbody{
 pub fn circular_orbits(n: usize) -> Vec<Nbody> {
     let mut particle_buf = vec![];
       particle_buf.push(Nbody {
-        x: 0.0,y: 0.0,z: 0.0,vx: 0.0,vy: 0.0,vz: 0.0,mass: 1.0*SOLAR_MASS,
+        x: 0.0,y: 0.0,z: 0.0,vx: 0.0,vy: 0.0,vz: 0.0,mass: 1.0*SOLAR_MASS, 
       });
   
-      for i in 0..n {
+      for i in 1..n+1 {
           let d = 0.1 + ((i as f64) * 5.0 / (n as f64));
           let v = f64::sqrt(1.0 / d);
           let theta = fastrand::f64() * 6.28;
@@ -36,7 +37,7 @@ pub fn circular_orbits(n: usize) -> Vec<Nbody> {
           let vy1 = v * f64::cos(theta);
           particle_buf.push(Nbody {
               x: x1,y: y1,z: 0.0,vx: vx1,vy: vy1,vz: 0.0,
-              mass: 1e-14*SOLAR_MASS,
+              mass: 1e-14*SOLAR_MASS, 
              
           });
       }
@@ -49,7 +50,7 @@ let mut testbodies:Vec<Nbody> = vec![];
 testbodies.push(Nbody {
     x: 0.0, y: 0.0, z: 0.0,
     vx: 0.0, vy: 0.0, vz: 0.0,
-    mass: SOLAR_MASS,
+    mass: SOLAR_MASS, 
 });
 // Jupiter
 testbodies.push(Nbody {
@@ -60,6 +61,7 @@ testbodies.push(Nbody {
     vy: 7.69901118419740425e-03 * YEAR,
     vz: -6.90460016972063023e-05 * YEAR,
     mass: 9.54791938424326609e-04 * SOLAR_MASS,
+    
 });
 // Saturn
 testbodies.push(Nbody {
@@ -70,6 +72,7 @@ testbodies.push(Nbody {
     vy: 4.99852801234917238e-03 * YEAR,
     vz: 2.30417297573763929e-05 * YEAR,
     mass: 2.85885980666130812e-04 * SOLAR_MASS,
+    
 });
 // Uranus
 testbodies.push(Nbody {
@@ -80,6 +83,7 @@ testbodies.push(Nbody {
     vy: 2.37847173959480950e-03 * YEAR,
     vz: -2.96589568540237556e-05 * YEAR,
     mass: 4.36624404335156298e-05 * SOLAR_MASS,
+    
 });
 // Neptune
 testbodies.push(Nbody {
@@ -90,6 +94,7 @@ testbodies.push(Nbody {
     vy: 1.62824170038242295e-03 * YEAR,
     vz: -9.51592254519715870e-05 * YEAR,
     mass: 5.15138902046611451e-05 * SOLAR_MASS,
+    
 });
 
 return testbodies
@@ -134,8 +139,9 @@ fn advance(bodies: &mut Vec<Nbody>, dt: f64, steps: i32) {
 }
 
 fn make_accels(bodies: & Vec<Nbody>,dt: f64)->Vec<(f64,f64,f64)>{
-    let accels = bodies.into_par_iter().map(|i| {
-        let mut accel: (f64,f64,f64) = (0.0,0.0,0.0);
+    let new_vels = bodies.into_par_iter().map(|i| {
+        let mut new_vel: (f64,f64,f64) = (i.vx,i.vy,i.vz);
+        
         for j in  bodies {
             let dx: f64 = i.x - j.x;
             let dy: f64 = i.y - j.y;
@@ -143,28 +149,47 @@ fn make_accels(bodies: & Vec<Nbody>,dt: f64)->Vec<(f64,f64,f64)>{
             let d2: f64 = dx*dx + dy*dy + dz*dz;
             if d2 != 0.0 {
                 let magi:f64 = (dt*j.mass)/(d2*d2.sqrt());
-                accel.0 -= dx*magi;
-                accel.1 -= dy*magi;
-                accel.2 -= dz*magi;
+                new_vel.0 -= dx*magi;
+                new_vel.1 -= dy*magi;
+                new_vel.2 -= dz*magi;
 
             }
         }
-        return accel;
-    });
-    let accelsdt: Vec<(f64,f64,f64)> = accels.collect();
-    return accelsdt
+        return new_vel;
+    }).collect();
+    return new_vels;
 }
 
 fn pstep(bodies: &mut Vec<Nbody>,dt: f64) {
-    let accel = make_accels(bodies, dt);
-    for i in 0..bodies.len() {
-        bodies[i].vx += accel[i].0;
-        bodies[i].vy += accel[i].1;
-        bodies[i].vz += accel[i].2;
-        bodies[i].x +=  bodies[i].vx*dt;
-        bodies[i].y +=  bodies[i].vy*dt;
-        bodies[i].z +=  bodies[i].vz*dt;
-    }
+    let new_vel = make_accels(bodies, dt);
+    let mut zipper:Vec<(Nbody,(f64,f64,f64))> =(0..bodies.len()).into_par_iter().map(|i| {
+        let link = (bodies[i],new_vel[i]);
+        return link;
+    }).collect();
+    let bodies1:Vec<Nbody> = zipper.into_par_iter().map(|i|{
+        let mut body:Nbody = Nbody { 
+            x:i.0.x+i.1.0*dt, 
+            y:i.0.y+i.1.1*dt, 
+            z:i.0.z+i.1.2*dt,
+            vx:i.1.0,
+            vy:i.1.1,
+            vz:i.1.2,
+            mass:i.0.mass,
+        };
+        return body;
+
+    }).collect();
+    bodies = bodies1;
+
+    
+    // for i in 0..bodies.len() {
+    //     bodies[i].vx = new_vel[i].0;
+    //     bodies[i].vy = new_vel[i].1;
+    //     bodies[i].vz = new_vel[i].2;
+    //     bodies[i].x +=  bodies[i].vx*dt;
+    //     bodies[i].y +=  bodies[i].vy*dt;
+    //     bodies[i].z +=  bodies[i].vz*dt;
+    // }
 
 }
 
