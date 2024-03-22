@@ -287,16 +287,26 @@ fn main() {
         .and_then(|s| s.into_string().ok())
         .and_then(|n| n.parse().ok())
         .unwrap_or(1000);
-    let mut bodies = circular_orbits(100);
+    let mut bodies = circular_orbits(1000);
+    let mut bodies1 = circular_orbits(1000);
     //create_testbodies(); //circular_orbits(10);
     //println!("{:?}", bodies);
 
 
     offset_momentum(&mut bodies);
+    offset_momentum(&mut bodies1);
+    //parallel
     println!("{}", p_energy(&bodies));
 
 
     padvance(&mut bodies, 0.01,n);
 
     println!("{}", p_energy(&bodies));
+    //seq
+    println!("{}", energy(&bodies1));
+
+
+    advance(&mut bodies1, 0.01,n);
+
+    println!("{}", energy(&bodies1));
 }
