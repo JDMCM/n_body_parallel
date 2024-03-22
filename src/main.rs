@@ -21,28 +21,7 @@ struct Nbody{
 
 
 
-pub fn circular_orbits(n: usize) -> Vec<Nbody> {
-    let mut particle_buf = vec![];
-      particle_buf.push(Nbody {
-        x: 0.0,y: 0.0,z: 0.0,vx: 0.0,vy: 0.0,vz: 0.0,mass: 1.0*SOLAR_MASS, 
-      });
-  
-      for i in 1..n+1 {
-          let d = 0.1 + ((i as f64) * 5.0 / (n as f64));
-          let v = f64::sqrt(1.0 / d);
-          let theta = fastrand::f64() * 6.28;
-          let x1 = d * f64::cos(theta);
-          let y1 = d * f64::sin(theta);
-          let vx1 = -v * f64::sin(theta);
-          let vy1 = v * f64::cos(theta);
-          particle_buf.push(Nbody {
-              x: x1,y: y1,z: 0.0,vx: vx1,vy: vy1,vz: 0.0,
-              mass: 1e-14*SOLAR_MASS, 
-             
-          });
-      }
-      particle_buf
-}
+
 
 fn create_testbodies() ->Vec<Nbody> {
 let mut testbodies:Vec<Nbody> = vec![];
@@ -161,25 +140,16 @@ fn make_accels(bodies: & Vec<Nbody>,dt: f64)->Vec<(f64,f64,f64)>{
 }
 
 fn pstep(bodies: &mut Vec<Nbody>,dt: f64) {
-    let new_vel = make_accels(bodies, dt);
-    let mut zipper:Vec<(Nbody,(f64,f64,f64))> =(0..bodies.len()).into_par_iter().map(|i| {
-        let link = (bodies[i],new_vel[i]);
-        return link;
-    }).collect();
-    let bodies1:Vec<Nbody> = zipper.into_par_iter().map(|i|{
-        let mut body:Nbody = Nbody { 
-            x:i.0.x+i.1.0*dt, 
-            y:i.0.y+i.1.1*dt, 
-            z:i.0.z+i.1.2*dt,
-            vx:i.1.0,
-            vy:i.1.1,
-            vz:i.1.2,
-            mass:i.0.mass,
-        };
-        return body;
+    let mut new_vel = make_accels(bodies, dt);
+    bodies.par_iter_mut().zip(&mut new_vel).for_each(|(i,j)| {
+        i.vx = j.0;
+        i.vy = j.1;
+        i.vz = j.2;
+        i.x  += j.0*dt;
+        i.y  += j.1*dt;
+        i.z  += j.2*dt;
 
-    }).collect();
-    bodies = bodies1;
+    })
 
     
     // for i in 0..bodies.len() {
@@ -289,12 +259,36 @@ fn offset_momentum(bodies: &mut Vec<Nbody>){
     bodies[0].vz = -pz/bodies[0].mass;
 }
 
+pub fn circular_orbits(n: usize) -> Vec<Nbody> {
+    let mut particle_buf = vec![];
+      particle_buf.push(Nbody {
+        x: 0.0,y: 0.0,z: 0.0,vx: 0.0,vy: 0.0,vz: 0.0,mass: 1.0*SOLAR_MASS, 
+      });
+  
+      for i in 1..n+1 {
+          let d = 0.1 + ((i as f64) * 5.0 / (n as f64));
+          let v = f64::sqrt(1.0 / d);
+          let theta = fastrand::f64() * 6.28;
+          let x1 = d * f64::cos(theta);
+          let y1 = d * f64::sin(theta);
+          let vx1 = -v * f64::sin(theta)*365.0;
+          let vy1 = v * f64::cos(theta)*365.0;
+          particle_buf.push(Nbody {
+              x: x1,y: y1,z: 0.0,vx: vx1,vy: vy1,vz: 0.0,
+              mass: 1e-14*SOLAR_MASS, 
+             
+          });
+      }
+      particle_buf
+}
+
 fn main() {
     let n = std::env::args_os().nth(1)
         .and_then(|s| s.into_string().ok())
         .and_then(|n| n.parse().ok())
         .unwrap_or(1000);
-    let mut bodies = create_testbodies(); //circular_orbits(10);
+    let mut bodies = circular_orbits(100);
+    //create_testbodies(); //circular_orbits(10);
     //println!("{:?}", bodies);
 
 
