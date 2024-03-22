@@ -283,6 +283,7 @@ pub fn circular_orbits(n: usize) -> Vec<Nbody> {
 }
 
 fn main() {
+    use std::time::Instant;
     let n = std::env::args_os().nth(1)
         .and_then(|s| s.into_string().ok())
         .and_then(|n| n.parse().ok())
@@ -296,17 +297,23 @@ fn main() {
     offset_momentum(&mut bodies);
     offset_momentum(&mut bodies1);
     //parallel
+    let nowp = Instant::now();
     println!("{}", p_energy(&bodies));
 
 
     padvance(&mut bodies, 0.01,n);
 
     println!("{}", p_energy(&bodies));
+    let elapsedp = nowp.elapsed();
     //seq
+    let now = Instant::now();
     println!("{}", energy(&bodies1));
 
 
     advance(&mut bodies1, 0.01,n);
 
     println!("{}", energy(&bodies1));
+    let elapsed = now.elapsed();
+    println!("parrallel time elasped: {:.2?}",elapsedp);
+    println!("seq time elasped: {:.2?}",elapsed);
 }
